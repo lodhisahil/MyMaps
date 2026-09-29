@@ -1,4 +1,5 @@
 import { pool } from "../db/index.js"
+import bcrypt from "bcrypt"
 
 const findUserByEmail = async (email) => {
     const result = await pool.query(
@@ -36,8 +37,45 @@ const createUserSession = async (userId, refreshTokenHash, expiresAt) => {
     return result.rows[0]
 }
 
+const revokeUserSession = async(sessionId) => {
+    const result = await pool.query(
+        `UPDATE user_sessions
+         SET revoked_at = NOW()
+         WHERE id = $1
+         RETURNING id, user_id, revoked_at`,
+         [sessionId]
+    )
+
+    return result.rows[0];
+}
+
+const findUserSessionByToken = async(userId, refreshToken) => {
+    const result = await pool.query(
+        `SELECT id, user_id, refresh_token_hash, expires_at, revoked_at
+         FROM user_sessions
+         WHERE user_id = $1
+         AND revoked_at IS NULL`,
+         [userId]
+    )
+
+    for(const session of result.rows){
+        const isTokenValid = await bcrypt.compare(
+            refreshToken,
+            session.refresh_token_hash
+        )
+
+        if(isTokenValid){
+            return session;
+        }
+    }
+
+    return null;
+}
+
 export {
     findUserByEmail,
     createUser,
-    createUserSession
+    createUserSession,
+    revokeUserSession,
+    findUserSessionByToken
 }

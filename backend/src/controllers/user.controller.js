@@ -8,7 +8,9 @@ import jwt from "jsonwebtoken";
 import {
     findUserByEmail,
     createUser,
-    createUserSession
+    createUserSession,
+    findUserSessionByToken,
+    revokeUserSession
 } from "../models/user.model.js"
 
 
@@ -158,7 +160,41 @@ const loginUser = asyncHandler ( async (req, res) => {
         )
 })
 
+const logoutUser = asyncHandler( async (req, res) => {
+    //1) get authenticated user
+    const userId = req.user.userId;
+
+    //2) get refresh tokem from cookie
+    const refreshToken = req.cookies?.refreshToken;
+
+    //3) find current session
+    if(refreshToken){
+        const session = await findUserSessionByToken(userId, refreshToken);
+
+        //4) revoke the session
+        if(session){
+            await revokeUserSession(session.id);
+        }
+    }
+
+    //5) clear cookies
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+
+    //6) send response
+    res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                null,
+                "User logged out successfully"
+            )
+        )
+})
+
 export {
     registerUser,
-    loginUser
+    loginUser,
+    logoutUser
 }

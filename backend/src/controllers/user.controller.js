@@ -30,6 +30,13 @@ const generateAccessAndRefreshToken = (userId) => {
     return {accessToken, refreshToken}
 }
 
+const generateAccessToken = (userId) => {
+    return jwt.sign(
+        {userId: userId},
+        process.env.JWT_SECRET,
+        {expiresIn: "15m"}
+    )
+}
 
 const registerUser = asyncHandler( async (req, res) => {
     //1) take data from body
@@ -193,8 +200,66 @@ const logoutUser = asyncHandler( async (req, res) => {
         )
 })
 
+const refreshAccessToken = asyncHandler( async (req, res) => {
+    //1) get refresh token from cookie
+    const refreshToken = req.cookies?.refreshToken;
+
+    if(!refreshToken){
+        throw new ApiError(
+            401,
+            "Refresh token is required"
+        )
+    }
+
+    //2) verify refresh token
+    const decodedToken = jwt.verify(
+        refreshToken,
+        process.env.JWT_SECRET
+    )
+
+    //3) find current session
+    const session = await findUserSessionByToken(decodedToken.userId, refreshToken)
+
+    if(!session){
+        throw new ApiError(
+            401,
+            "Invalid refresh token"
+        )
+    }
+
+    //4) check session expiry
+    if(new Date(session.expires_at) <= new Date()){
+        throw new ApiError(
+            401,
+            "Refresh token expired"
+        )
+    }
+
+    //5) generate new access token
+    const accessToken = generateAccessToken(decodedToken.userId);
+    
+    //6) update access token cookie
+    res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax"
+    })
+
+    //7) send response
+    res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                null,
+                "Access token refreshed successfully"
+            )
+        )
+})
+
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshAccessToken
 }

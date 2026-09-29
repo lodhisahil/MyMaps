@@ -1,0 +1,43 @@
+import { pool } from "../db/index.js"
+
+const findUserByEmail = async (email) => {
+    const result = await pool.query(
+        `SELECT id, name, email, password_hash
+        FROM users
+        WHERE email = $1`,
+        [email]
+    );
+
+    return result.rows[0];
+}
+
+const createUser = async (name, email, passwordHash) => {
+    const result = await pool.query(
+        `INSERT INTO users (name, email, password_hash)
+        VALUES ($1, $2, $3)
+        RETURNING id, name, email, created_at`,
+        [name, email, passwordHash]
+    );
+    return result.rows[0];
+};
+
+const createUserSession = async (userId, refreshTokenHash, expiresAt) => {
+    const result = await pool.query(
+        `INSERT INTO user_sessions (
+            user_id,
+            refresh_token_hash,
+            expires_at
+        )
+        VALUES ($1, $2, $3)
+        RETURNING id, user_id, expires_at, created_at`,
+        [userId, refreshTokenHash, expiresAt]
+    )
+
+    return result.rows[0]
+}
+
+export {
+    findUserByEmail,
+    createUser,
+    createUserSession
+}

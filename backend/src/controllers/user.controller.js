@@ -10,7 +10,8 @@ import {
     createUser,
     createUserSession,
     findUserSessionByToken,
-    revokeUserSession
+    revokeUserSession,
+    findUserById
 } from "../models/user.model.js"
 
 
@@ -257,9 +258,36 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
         )
 })
 
+const getCurrentUser = asyncHandler( async (req, res) => {
+    //1) get the id from auth middleware
+    const userId = req.user.userId;
+
+    //2) find user
+    const user = await findUserById(userId);
+
+    if(!user){
+        throw new ApiError(
+            404,
+            "User not found"
+        )
+    }
+
+    //3) send response
+    res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                user,
+                "Current user fetched successfully"
+            )
+        )
+})
+
 export {
     registerUser,
     loginUser,
     logoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    getCurrentUser
 }

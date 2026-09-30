@@ -5,7 +5,8 @@ import {
     registerUser,
     loginUser,
     logoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    getCurrentUser
 } from "../controllers/user.controller.js"
 
 
@@ -16,6 +17,7 @@ router.post("/login", loginUser);
 
 //protected routes
 router.post("/logout", verifyJWT, logoutUser);
+router.get("/me", verifyJWT, getCurrentUser);
 
 router.post("/refresh-token", refreshAccessToken)
 

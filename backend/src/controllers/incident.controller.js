@@ -4,7 +4,9 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 import {
      createIncident as createIncidentModel ,
-     getAllIncidents as getAllIncidentsModel
+     getAllIncidents as getAllIncidentsModel,
+     getIncidentById as getIncidentByIdModel,
+     updateIncident as updateIncidentModel
 } from "../models/incident.model.js";
 
 const createIncident = asyncHandler ( async (req, res) => {
@@ -72,7 +74,95 @@ const getAllIncidents = asyncHandler ( async (req, res) => {
         )
 })
 
+const getIncidentById = asyncHandler (async (req, res) => {
+    const { id } = req.params;
+    const incident = await getIncidentByIdModel(id);
+
+    if(!incident){
+        throw new ApiError(
+            404,
+            "Incident not found"
+        )
+    }
+
+    res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                incident,
+                "Incident fetched successfully."
+            )
+        )
+})
+
+const updateIncident = asyncHandler (async (req, res) => {
+    const { id } = req.params
+    const userId = req.user.userId;
+
+    const {description, severity, status} = req.body
+
+    if(
+        description == undefined &&
+        severity == undefined &&
+        status == undefined 
+    ){
+        throw new ApiError(
+            400,
+            "Minimum one field is required to update"
+        )
+    }
+
+   const allowedSeverities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+
+    const allowedStatuses = ["ACTIVE", "RESOLVED", "CLOSED"];
+
+    if (severity !== undefined && !allowedSeverities.includes(severity)) {
+        throw new ApiError(
+            400,
+            "Invalid severity value"
+        );
+    }
+
+    if (status !== undefined && !allowedStatuses.includes(status)) {
+        throw new ApiError(
+            400,
+            "Invalid status value"
+        );
+    }
+
+    if (description !== undefined && typeof description !== "string") {
+        throw new ApiError(
+            400,
+            "Description must be a string"
+        );
+    }
+
+    const  incident = await updateIncidentModel(
+        id, userId, description, severity, status
+    )
+
+    if(!incident){
+        throw new ApiError(
+            404,
+            "Incident not found or you are not authorized to update it"
+        )
+    }
+
+    res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                incident,
+                "Incident updated successfully"
+            )
+        )
+})
+
 export {
     createIncident,
-    getAllIncidents
+    getAllIncidents,
+    getIncidentById,
+    updateIncident
 }

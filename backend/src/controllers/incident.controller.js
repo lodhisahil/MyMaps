@@ -6,7 +6,8 @@ import {
      createIncident as createIncidentModel ,
      getAllIncidents as getAllIncidentsModel,
      getIncidentById as getIncidentByIdModel,
-     updateIncident as updateIncidentModel
+     updateIncident as updateIncidentModel,
+     deleteIncident as deleteIncidentModel
 } from "../models/incident.model.js";
 
 const createIncident = asyncHandler ( async (req, res) => {
@@ -160,9 +161,34 @@ const updateIncident = asyncHandler (async (req, res) => {
         )
 })
 
+const deleteIncident = asyncHandler( async (req, res) => {
+    const { id } = req.params
+    const userId = req.user.userId
+
+    const deletedIncident = await deleteIncidentModel(id, userId);
+
+    if(!deletedIncident){
+        throw new ApiError(
+            404,
+            "Incident not found or you are not authorized for this operation"
+        )
+    }
+
+    res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                deletedIncident,
+                "Incident deleted successfully"
+            )
+        )
+})
+
 export {
     createIncident,
     getAllIncidents,
     getIncidentById,
-    updateIncident
+    updateIncident,
+    deleteIncident
 }

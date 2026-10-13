@@ -104,9 +104,21 @@ const updateIncident = async (
     return result.rows[0]
 }
 
+const deleteIncident = async (incidentId, userId) => {
+    const result = await pool.query(
+        `DELETE FROM incidents
+        WHERE id = $1
+            AND user_id = $2
+        RETURNING id, user_id`,
+        [incidentId, userId]
+    )
+    return result.rows[0]
+}
+
 export{
     createIncident,
     getAllIncidents,
     getIncidentById,
-    updateIncident
+    updateIncident,
+    deleteIncident
 }

@@ -3,6 +3,7 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 import {
     createIncident,
+    deleteIncident,
     getAllIncidents,
     getIncidentById,
     updateIncident
@@ -14,5 +15,6 @@ router.post("/", verifyJWT, createIncident)
 router.get("/", getAllIncidents)
 router.get("/:id", getIncidentById)
 router.patch("/:id", verifyJWT, updateIncident)
+router.delete("/:id", verifyJWT, deleteIncident)
 
 export default router
